@@ -8,7 +8,9 @@ import pandas as pd
 
 
 HISAT_BINARY = '/home/michi/hisat2-2.1.0/hisat2'
-HISAT_INDEX = '/home/michi/hisat_indices/grch38/genome'
+# HISAT_INDEX = '/home/michi/hisat_indices/grch38/genome'
+HISAT_INDEX = '/run/media/michi/618937cd-1ca7-4a88-a2c6-d3e54c1ba4b9/qiagen_pipeline_data/hisat_index/grch38/genome'
+
 def hisat_single(R12_pairs, output_bam, cores=1):
     """
     returns the string for a HISAT call
@@ -24,7 +26,7 @@ def hisat_single_plumbum(R12_pairs, output_bam:str, cores=1):
     assert isinstance(output_bam, str)
 
     hisat = plumbum.local[HISAT_BINARY]
-    samtools =  plumbum.local['/home/michi/miniconda3_newtry/envs/mkl/bin//samtools']
+    samtools = plumbum.local['/home/michi/miniconda3_newtry/envs/mkl/bin//samtools']
 
 
     r2_files = [r2 for _, r2 in R12_pairs]
@@ -34,10 +36,13 @@ def hisat_single_plumbum(R12_pairs, output_bam:str, cores=1):
                         '-x', f'{HISAT_INDEX}',
                         '-U', f'{input_args}']
 
-    samtools_bound = samtools['view',
-                              '-bS', '-']
+    samtools_convert = samtools['view',
+                                '-bS', '-']
 
-    cmd = hisat_bound | samtools_bound > output_bam
+    samtools_sort = samtools['sort',
+                             '-']
+
+    cmd = hisat_bound | samtools_convert | samtools_sort > output_bam
     return cmd
 
 
