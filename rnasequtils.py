@@ -2,6 +2,8 @@ import os
 import gzip
 import tempfile
 import tqdm
+import pathlib
+import pysam
 
 def Phred_symbol2errorprob(symbol:str):
     "Phred ascii reprensentation to probability of error"
@@ -9,6 +11,10 @@ def Phred_symbol2errorprob(symbol:str):
     P = 10**(-Q/10)
     # logP = -Q/10
     return P
+
+def Phred2symbol(phred:str):
+    "phred score to ascii"
+    return str(chr(phred+33))
 
 def merge_zip_files(zipfiles:list, targetzip):
     """
@@ -60,6 +66,48 @@ def merge_zip_files(zipfiles:list, targetzip):
 #     os.remove(tmp_name)
 #
 #     os.rename(targetzip, targetzip+'.gz')
+
+def bamfile_index(bamfile):
+    os.system(f'samtools index {bamfile}')
+
+
+def bamfile_sort_index(bamfilename, outfile=None, add_flags=''):
+
+    f = pathlib.Path(bamfilename)
+    basename = f.stem
+    folder = str(f.parent)
+    fullpath_and_name = str(bamfilename)
+
+    # we sort inplace, hence the sort first goes into a separate file
+    #
+
+    sorted_name = f'{folder}/{basename}.sorted.bam' if outfile is None else outfile
+    os.system(f'samtools sort {add_flags} {fullpath_and_name} > {sorted_name}')
+    bamfile_index(sorted_name)
+    return sorted_name
+
+
+def rename_contigs(bamfile_name, outname, contig_rename_dict):
+    """
+    sometimes the contig names get messed up: chr1 vs 1 etc
+    """
+    with pysam.AlignmentFile(bamfile_name, "rb") as bamfile:
+        # fix the header
+        newheader = bamfile.header.to_dict().copy()
+        for contig_dict in newheader['SQ']:
+            if contig_dict['SN'] in contig_rename_dict.keys():
+                contig_dict['SN'] = contig_rename_dict[contig_dict['SN']]
+        newheader = pysam.AlignmentHeader.from_dict(newheader)
+        #fix the reads
+        with pysam.AlignmentFile(outname, "wb", header=newheader) as out:
+            for read in tqdm.tqdm(bamfile.fetch(until_eof=True)):
+                newread = read.to_dict().copy()
+                if newread['ref_name'] in contig_rename_dict.keys():
+                    newread['ref_name'] = contig_rename_dict[newread['ref_name']]
+                    newread = pysam.AlignedSegment.from_dict(newread, newheader)
+                    out.write(newread)
+
+
 
 
 def main():
