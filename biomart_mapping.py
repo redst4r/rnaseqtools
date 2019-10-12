@@ -11,8 +11,41 @@ import pandas as pd
 
 # s.attributes('hsapiens_gene_ensembl')
 
+"""
+the main function to use with the biomart data!!
+"""
+def load_biomart():
+    """
+    this returns a dataframe with
+      symbol
+      ensembl_gene_id
+      transcript_length
+      ensembl_transcript_id
+      type == transcript_biotype
+      entrezgene
+    """
+    if not os.path.exists('transcript2gene_bulk_biomart_full.csv'):
+        df_biomart = biomart_query_all()
+        df_biomart.to_csv('transcript2gene_bulk_biomart_full.csv')
+    else:
+        df_biomart = pd.read_csv('transcript2gene_bulk_biomart_full.csv', index_col=0)
+
+    # sometimes we get multiple entries per transcript_id, get rid of these
+    # dups = df.ensembl_transcript_id.value_counts().index[(df.ensembl_transcript_id.value_counts() > 1)]
+    df_biomart = df_biomart.drop_duplicates('ensembl_transcript_id')
+    df_biomart['hgnc_symbol'] = [s if isinstance(s,str) else t
+                                 for s, t in zip(df_biomart.hgnc_symbol,
+                                                 df_biomart.ensembl_transcript_id)]
+
+    df_biomart.rename({'hgnc_symbol': 'symbol', 'transcript_biotype': 'type'}, axis=1, inplace=True)
+
+    return df_biomart
 
 
+
+"""
+helper functions to create the biomart dataframe
+"""
 
 def print_attribtues():
     """
@@ -43,10 +76,13 @@ def biomart_query_all(verbose=False):
     # s.add_attribute_to_xml('entrezgene')
     s.add_attribute_to_xml('hgnc_symbol')
     s.add_attribute_to_xml('ensembl_gene_id')
+    s.add_attribute_to_xml('ensembl_gene_id_version')
     s.add_attribute_to_xml('transcript_length')
     s.add_attribute_to_xml('ensembl_transcript_id')
+    s.add_attribute_to_xml('ensembl_transcript_id_version')
+    
     s.add_attribute_to_xml('transcript_biotype')
-    s.add_attribute_to_xml('entrezgene')
+    # s.add_attribute_to_xml('entrezgene')
 
 
     xml = s.get_xml()
@@ -57,7 +93,15 @@ def biomart_query_all(verbose=False):
     res = s.query(xml)
 
     df = pd.read_csv(io.StringIO(res), sep='\t', header=None)
-    df.columns=['hgnc_symbol', 'ensembl_gene_id', 'transcript_length', 'ensembl_transcript_id', 'transcript_biotype', 'entrezgene']
+    df.columns=['hgnc_symbol', 
+                'ensembl_gene_id',
+                'ensembl_gene_id_version',
+                'transcript_length',
+                'ensembl_transcript_id',
+                'ensembl_transcript_id_version',
+                'transcript_biotype',
+                # 'entrezgene'
+                ]
     df = df.drop_duplicates()
     return df
 
