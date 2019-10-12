@@ -69,7 +69,7 @@ def load_featureCounts(fc_file):
     df = pd.read_csv(fc_file, sep='\t', skiprows=1)
     df = df.set_index('Geneid')
     df = df.drop(['Chr', 'Start', 'End', 'Strand'],axis=1)
-    count_col = [c for c in df.columns if c.endswith('hisat_aligned.bam')]
+    count_col = [c for c in df.columns if c.endswith('.bam')]
     assert len(count_col) == 1
     count_col= count_col[0]
 

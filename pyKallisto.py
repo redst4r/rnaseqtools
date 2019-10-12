@@ -10,6 +10,8 @@ import pandas as pd
 
 
 KALLISTO_INDEX = '/home/michi/postdoc_seattle/HL60_SC_vs_bulk/Homo_sapiens.GRCh38.cdna.all.idx.gz'
+KALLISTO_INDEX = '/home/michi/Homo_sapiens.GRCh38.cdna.all.kallisto.idx'
+
 GENOMEBAM_GTF  = '/home/michi/postdoc_seattle/HL60_SC_vs_bulk/Homo_sapiens.GRCh38.94.gtf'
 
 
@@ -87,3 +89,19 @@ def kallist_bootstrap_2_adata(fname):
         var['eff_length'] = qq['aux/eff_lengths'][:]
         adata = anndata.AnnData(X, obs=obs,var=var.set_index('target_id'))
     return adata
+
+
+def kallisto_tsv_2_adata(fname, samplename, units):
+    import scanpy as sc
+    """
+    kallisto quant outputs a single tsv containing a single sample
+    but it has 4 rows: `target_id	length	eff_length	est_counts	tpm`
+    """
+    assert units in ['tpm','est_counts']
+    df = pd.read_csv(fname, sep='\t')
+    var = df[['target_id', 'length', 'eff_length']].set_index('target_id')
+
+#     units = 'est_counts'
+    X = df[['target_id', units]].set_index('target_id').values.T
+    obs = pd.DataFrame([{'samplename': samplename}])
+    return sc.AnnData(X, obs=obs, var=var)
