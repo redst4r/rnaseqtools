@@ -80,7 +80,6 @@ def biomart_query_all(verbose=False):
     s.add_attribute_to_xml('transcript_length')
     s.add_attribute_to_xml('ensembl_transcript_id')
     s.add_attribute_to_xml('ensembl_transcript_id_version')
-    
     s.add_attribute_to_xml('transcript_biotype')
     # s.add_attribute_to_xml('entrezgene')
 
@@ -93,7 +92,7 @@ def biomart_query_all(verbose=False):
     res = s.query(xml)
 
     df = pd.read_csv(io.StringIO(res), sep='\t', header=None)
-    df.columns=['hgnc_symbol', 
+    df.columns=['hgnc_symbol',
                 'ensembl_gene_id',
                 'ensembl_gene_id_version',
                 'transcript_length',

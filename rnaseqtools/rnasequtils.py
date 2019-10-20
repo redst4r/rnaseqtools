@@ -5,6 +5,13 @@ import tqdm
 import pathlib
 import pysam
 
+
+def get_chrom_length(bamfilename, chrom):
+    # the the length of hte chromosome
+    with pysam.AlignmentFile(bamfilename, "rb") as bf:
+        chrom_length = [_['LN'] for _ in bf.header.to_dict()['SQ'] if _['SN'] == chrom][0]
+    return chrom_length
+
 def Phred_symbol2errorprob(symbol:str):
     "Phred ascii reprensentation to probability of error"
     Q = ord(symbol) - 33
