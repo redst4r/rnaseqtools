@@ -4,7 +4,40 @@ import tempfile
 import tqdm
 import pathlib
 import pysam
+from pyliftover import LiftOver
 
+
+def coordinate_liftover(from_genome:str, to_genome:str, chromosomes:list, positions:list):
+    """
+    from/to: hg19/hg38
+
+    chromosomes:  should be of chrZ
+    """
+    lo = LiftOver(from_genome, to_genome)
+    lo.convert_coordinate('chr17',7417086)
+
+    new_position = []
+    new_chromosome = []
+    for c,p in zip(chromosomes, positions):
+        conversion = lo.convert_coordinate(c,p)
+        if conversion:
+            if len(conversion) == 1:
+                chro, pos, _, score = conversion[0]
+            else:
+                raise ValueError('multiple conversion')
+
+            if c != chro:
+                print(f'Warning: chrom changed: {c} -> {chro}')
+
+            new_chromosome.append(chro)
+            new_position.append(pos)
+        else:
+            print(f'Warning: no conversion! {c}:{p}')
+            new_chromosome.append('nan')
+            new_position.append(-1)
+
+    new_position = [int(_) for _ in new_position]
+    return new_chromosome, new_position
 
 def get_chrom_length(bamfilename, chrom):
     # the the length of hte chromosome

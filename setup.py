@@ -19,5 +19,6 @@ setup(name='rnaseqtools',
           'scipy',
           'pandas',
           'bioservices'
+          'pyliftover'
           ],
       zip_safe=False)
