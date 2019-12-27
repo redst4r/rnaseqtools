@@ -1,9 +1,10 @@
-from bioservices import biomart
 import io
 import collections
 import tqdm
 import os
+import numpy as np
 import pandas as pd
+from bioservices import biomart
 # datasets = s.datasets("ENSEMBL_MART_ENSEMBL")
 
 # filters = s.filters('hsapiens_gene_ensembl')
@@ -52,7 +53,7 @@ def print_attribtues():
     thats all the atribures that we can get from biomart for a gene/transcript
     """
     s = biomart.BioMart(host='uswest.ensembl.org')
-    list(s.attributes('hsapiens_gene_ensembl').keys())
+    return list(s.attributes('hsapiens_gene_ensembl').keys())
 
 
 def biomart_query_transcripts(transcript_ids, batchsize=10000, verbose=False):
@@ -63,10 +64,15 @@ def biomart_query_genes(gene_ids, batchsize=10000, verbose=False):
     return biomart_query(gene_ids, 'ensembl_gene_id', batchsize, verbose)
 
 
-def biomart_query_all(verbose=False):
+def biomart_query_all(verbose=False, extra_fields=None):
     """
     pulls down all entries from BIOMART for Human: symbol, trasncript, gene, length, type
     """
+
+    THE_FILE = '/home/michi/postdoc_seattle/rnaseqtools/rnaseqtools/biomart_all.csv'
+
+    if os.path.exists(THE_FILE):
+        return pd.read_csv(THE_FILE)
 
     s = biomart.BioMart(host='uswest.ensembl.org')
     s.new_query()
@@ -74,13 +80,22 @@ def biomart_query_all(verbose=False):
 
     # what we want to get back
     # s.add_attribute_to_xml('entrezgene')
-    s.add_attribute_to_xml('hgnc_symbol')
-    s.add_attribute_to_xml('ensembl_gene_id')
-    s.add_attribute_to_xml('ensembl_gene_id_version')
-    s.add_attribute_to_xml('transcript_length')
-    s.add_attribute_to_xml('ensembl_transcript_id')
-    s.add_attribute_to_xml('ensembl_transcript_id_version')
-    s.add_attribute_to_xml('transcript_biotype')
+
+    fields = [
+        'hgnc_symbol',
+        'ensembl_gene_id',
+        'ensembl_gene_id_version',
+        'transcript_length',
+        'ensembl_transcript_id',
+        'ensembl_transcript_id_version',
+        'transcript_biotype'
+    ]
+
+    if extra_fields:
+        fields.extend(extra_fields)
+
+    for f in fields:
+        s.add_attribute_to_xml(f)
     # s.add_attribute_to_xml('entrezgene')
 
 
@@ -92,16 +107,11 @@ def biomart_query_all(verbose=False):
     res = s.query(xml)
 
     df = pd.read_csv(io.StringIO(res), sep='\t', header=None)
-    df.columns=['hgnc_symbol',
-                'ensembl_gene_id',
-                'ensembl_gene_id_version',
-                'transcript_length',
-                'ensembl_transcript_id',
-                'ensembl_transcript_id_version',
-                'transcript_biotype',
-                # 'entrezgene'
-                ]
+    df.columns = fields
     df = df.drop_duplicates()
+
+    df.to_csv(THE_FILE)
+
     return df
 
 def biomart_query(id_list:list, id_type:str, batchsize=10000, verbose=False):
