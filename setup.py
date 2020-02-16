@@ -18,7 +18,7 @@ setup(name='rnaseqtools',
           'tqdm',
           'scipy',
           'pandas',
-          'bioservices'
+          'bioservices',
           'pyliftover'
           ],
       zip_safe=False)
