@@ -13,7 +13,7 @@ from different sources on the kallisto github page
 - https://github.com/paulranum11/kallisto_pseudo_to_expressionMatrix/blob/master/prep_TCC_matrix.py
 
 """
-
+raise ValueError('this is deprecated, checkout pybustools!')
 class KallistoPseudoParser():
 
     def __init__(self, transcriptome_fasta):

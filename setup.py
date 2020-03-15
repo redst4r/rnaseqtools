@@ -20,6 +20,5 @@ setup(name='rnaseqtools',
           'pandas',
           'bioservices',
           'pyliftover',
-          'gmpy2'
           ],
       zip_safe=False)
