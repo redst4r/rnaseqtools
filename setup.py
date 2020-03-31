@@ -20,5 +20,6 @@ setup(name='rnaseqtools',
           'pandas',
           'bioservices',
           'pyliftover',
+          'rpy2', 
           ],
       zip_safe=False)
