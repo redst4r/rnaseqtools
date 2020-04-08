@@ -31,3 +31,16 @@ def read_fastq_seqs(filepath):
     for seq_header, seq, qual_header, qual in read_fastq_seqs_bare(filepath):
         read_id = seq_header[1:].split(" ")[0]
         yield read_id, seq.rstrip('\n')
+
+
+def read_fastq_seqs_multiple_lanes(fastq_files: list):
+    """
+    seemlessly concatenates the reads from multiple fastq reads;
+
+    fastq_files: a list of fastq filenames that will all be concatenated
+
+    Return:
+        generator of:
+        Read_Id, Sequence
+    """
+    return itertools.chain.from_iterable(fastq_files)
