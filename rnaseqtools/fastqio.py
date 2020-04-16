@@ -43,4 +43,4 @@ def read_fastq_seqs_multiple_lanes(fastq_files: list):
         generator of:
         Read_Id, Sequence
     """
-    return itertools.chain.from_iterable(fastq_files)
+    return itertools.chain.from_iterable([read_fastq_seqs(_) for _ in fastq_files])
