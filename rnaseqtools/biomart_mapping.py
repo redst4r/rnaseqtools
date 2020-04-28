@@ -88,7 +88,10 @@ def biomart_query_all(verbose=False, extra_fields=None):
         'transcript_length',
         'ensembl_transcript_id',
         'ensembl_transcript_id_version',
-        'transcript_biotype'
+        'transcript_biotype',
+        'chromosome_name',
+        'start_position',
+        'end_position',
     ]
 
     if extra_fields:
@@ -96,8 +99,6 @@ def biomart_query_all(verbose=False, extra_fields=None):
 
     for f in fields:
         s.add_attribute_to_xml(f)
-    # s.add_attribute_to_xml('entrezgene')
-
 
     xml = s.get_xml()
 
