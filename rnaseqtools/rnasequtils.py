@@ -5,7 +5,8 @@ import tqdm
 import pathlib
 import pysam
 from pyliftover import LiftOver
-
+from rnaseqtools.fastqio import read_fastq_seqs_bare
+import gzip
 
 def coordinate_liftover(from_genome:str, to_genome:str, chromosomes:list, positions:list):
     """
@@ -148,6 +149,22 @@ def rename_contigs(bamfile_name, outname, contig_rename_dict):
                     out.write(newread)
 
 
+def trim_reads(fastq_file, outfile, trimlength):
+    """
+    iterates over a fastq file, triming all reads to given length
+    and saves to new trimmed fastq to disk
+    """
+    if not outfile.endswith('gz'):
+        outfile = outfile+'.gz'
+        
+    fastq_iter = read_fastq_seqs_bare(fastq_file)
+    
+    with gzip.open(outfile, 'w') as fh:
+        for seq_header, seq, qual_header, qual in tqdm.tqdm(fastq_iter):
+            seq = seq[:trimlength]
+            qual = qual[:trimlength]
+            entry = f'{seq_header.strip()}\n{seq.strip()}\n{qual_header.strip()}\n{qual.strip()}\n'
+            fh.write(entry.encode())
 
 
 def main():
