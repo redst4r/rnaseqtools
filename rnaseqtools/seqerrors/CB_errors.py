@@ -3,7 +3,7 @@ import numpy as np
 import os
 import pysam
 import tqdm
-import pybktree
+# import pybktree
 import collections
 import pandas as pd
 import toolz
