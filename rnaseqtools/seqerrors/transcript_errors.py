@@ -24,22 +24,39 @@ from statsmodels.formula.api import ols
 import warnings
 
 
-def _get_1BP_mutants(seq, position):
+def _get_1BP_mutants(seq:str, position:int):
     "return the three 1BP mutations of a sequence at the given position"
-    for base in ['A','C','G','T']:
+    for base in ['A', 'C', 'G', 'T']:
         new = seq[:position] + base + seq[position+1:]
         if seq != new:
             yield new
 
 
+def _get_1BP_2BP_mutants(seq):
+    for i in range(len(seq)):
+        for bp1_mut in _get_1BP_mutants(seq, i):
+            yield bp1_mut
+            for j in range(i+1, len(seq)):
+                for bp2_mut in _get_1BP_mutants(bp1_mut, j):
+                    if bp2_mut != seq:
+                        yield bp2_mut
+
+"""
+from scipy.special import binom
+s = 'AAAAAAAAAAAA'
+N = len(s)
+assert list(_get_1BP_2BP_mutants(s)) == 3 * 3 * binom(N,2) + 3 * binom(N,1)
+"""
+
+
 def _get_number_of_shadows(cb, counter_some_error):
     """
-    for a given CB, check the total reads that its 1BP neighbours have
-    we do this position dependent too: how many reads were, CB and read differ by 1BP in the first base
+    for a given sequence, check the total reads that its 1BP neighbours have
+    we do this position dependent too: how many reads where CB and read differ by 1BP in the first base
 
     return a dict with 16 positions, with the number of 1BP neighbours at each position
     """
-    shadow_counts_per_position  = {}
+    shadow_counts_per_position = {}
     for i in range(len(cb)):
         shadow_counts_per_position[i] = 0
         for mutant in _get_1BP_mutants(cb, position=i):
@@ -82,13 +99,16 @@ def estimate_error_rate_shadows(counter_no_error, counter_some_error):
 
 
 def read_filter(read):
+    """
+    filtering the R2 for uniquely mapped, no gaps, no N
+    """
     if read.is_duplicate:
         return False
 
     if read.is_secondary or read.is_supplementary or read.is_unmapped:
         return False
 
-    if not read.has_tag('CR') or not read.has_tag('UR') :  # UR and CR are the RAW uncorrected sequences
+    if not read.has_tag('CR') or not read.has_tag('UR'):  # UR and CR are the RAW uncorrected sequences
         return False
 
     length = len(read.query_sequence)
@@ -108,35 +128,32 @@ def read_filter(read):
 
 def estimate_shadow_3prime(bamfile, region):
     """
-    this does it on a specific region
+    counts occurances of all reads in the given region.
+    also takes care of reverse reads (flipping them)
     """
     read_counter = collections.defaultdict(int)
 
     for read in tqdm.tqdm(pysam.AlignmentFile(bamfile).fetch(region=region)):
         if read_filter(read) is False:
             continue
-        # mismatches = read.get_tag('nM')
-        # actually we dont care about mismatces at this point. jsut te most freqenet molecules
 
+        seq = read.query_sequence
         if read.is_reverse:
-            seq = read.query_sequence[::-1]
-        else:
-            seq = read.query_sequence
-
+            seq = seq[::-1]
         read_counter[seq] += 1
 
     return read_counter
 
 
-def get_most_common_true_sequences(read_counter, topN):
+def get_most_common_true_sequences(read_counter, topN:int):
     """
     get the most abundant sequences, but also make sure that shadows dont sneak in.
     e.g. a VERY abundant true sequence might be ~100000reads, and 1% (1000)
     will result in shadows. these shadows might end up in the top100 itself
     """
     most_common = set()
-    flagged_shadows = set()
-    for seq, freq in collections.Counter(read_counter).most_common(topN):
+    flagged_shadows = set()  # all sequences that we've seen as a shadow of a more abundant molecule
+    for seq, freq in tqdm.tqdm(collections.Counter(read_counter).most_common(topN), description='finding most common seqs'):
 
         # if its already flagged as shadow, skip it
         if seq in flagged_shadows:
@@ -151,9 +168,15 @@ def get_most_common_true_sequences(read_counter, topN):
     return most_common
 
 
-def read_counter_to_df(read_counter):
+def read_counter_to_df(read_counter, topN):
+    """
+    turns a read counter (which has real and shadow molecules) into
+    a dataframe, each row being a true barcode (based on frequency, topN
+    barcodes will be used),  and the number of real reads
+    and shadows annotated
+    """
     df_seq = []
-    most_common = get_most_common_true_sequences(read_counter, topN=500)
+    most_common = get_most_common_true_sequences(read_counter, topN)
     print(len(most_common))
     for seq in most_common:
         shadow_per_position = _get_number_of_shadows(seq, read_counter)
@@ -162,22 +185,55 @@ def read_counter_to_df(read_counter):
                            'n_real': read_counter[seq], 'position': pos})
 
     df_seq = pd.DataFrame(df_seq)
-    df_seq['error_rate'] = df_seq['n_shadow'] / (df_seq['n_shadow'] + df_seq['n_real'])
     return df_seq
 
 
-def error_rate(df):
+def read_counter_to_subsitution_table(read_counter, topN):
     """
-    estimate the error rate based on real and shadow counts
+    estimate real and shadow molecules, and keep track of which mutations/errors occured!
+    """
+    df_substitutions = []
+    most_common = get_most_common_true_sequences(read_counter, topN)
+    print(len(most_common))
+    for seq in most_common:
+        for pos in range(len(seq)):  # check all mutation at base-position
+
+            mut_frequencies = {'A': 0, 'C': 0, 'G': 0, 'T':0}
+            for mutant in _get_1BP_mutants(seq, pos):
+                if mutant in read_counter:  # we found a existing one mutant
+                    base_mut = mutant[pos]
+                    mut_frequencies[base_mut] += read_counter[mutant]
+
+            base_true = seq[pos]
+            freq_mut = sum(mut_frequencies.values())
+            mut_frequencies[base_true] = read_counter[seq]  # record the number of correct basepairs too!
+            r = {'base_true': base_true,
+                 'position': pos, 'frequency_true': read_counter[seq], 'frequency_mut': freq_mut,
+                 'frequency_A': mut_frequencies['A'],
+                 'frequency_C': mut_frequencies['C'],
+                 'frequency_G': mut_frequencies['G'],
+                 'frequency_T': mut_frequencies['T'],
+                 'seq': seq}
+            df_substitutions.append(r)
+    df_substitutions = pd.DataFrame(df_substitutions)
+    return df_substitutions
+
+
+def estimate_error_rate(df):
+    """
+    estimate the error rate based on real and shadow counts.
+    Dataframe is created via `read_counter_to_df()`
     """
     assert 'n_shadow' in df.columns and 'n_real' in df.columns
     # linear regression
     model = ols('n_shadow ~ -1 + n_real', df)
     res = model.fit()
     beta = res.params['n_real']
+    confidence_interval = res.conf_int().loc['n_real'].values
     error_linear = beta / (1 + beta)
-
-    # simple ration
+    error_c5 = confidence_interval[0] / (1+confidence_interval[0])
+    error_c95 = confidence_interval[1] / (1+confidence_interval[1])
+    # simple ratio
     naive = np.mean(df.n_shadow / (df.n_shadow+df.n_real))
 
     # binomail "regression": actually just estimating the paramter of a binomial,
@@ -204,6 +260,7 @@ def error_rate(df):
         rres = rmod.fit()
         robust_beta = rres.params[0]
         robust_err = robust_beta / (1 + robust_beta)
-    return {'error_linear': error_linear, 'error_naive': naive,
+    return {'error_linear': error_linear, 'error_linear_c5': error_c5, 'error_linear_c95': error_c95,
+            'error_naive': naive,
             'error_binom': theta_binom, 'error_binom_c5': theta_binom_c5, 'theta_binom_c95': theta_binom_c95,
             'error_robust': robust_err}
