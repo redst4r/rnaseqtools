@@ -120,6 +120,11 @@ def read_filter(read):
     if 'N' in seq:
         return False
 
+    mismatches = read.get_tag('nM')
+    # just to make sure that this read REALLY maps here
+    if mismatches > 1:
+        return False
+
     # only uniquely mapped reads (10x uses STARalign and thats 255 for unique mapped)
     if read.mapping_quality != 255:
         return False
