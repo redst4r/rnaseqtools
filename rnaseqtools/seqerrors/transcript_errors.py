@@ -13,15 +13,11 @@ import pysam
 import collections
 import pandas as pd
 import numpy as np
-import pysam
-import seaborn as sns
-import collections
 import tqdm
-import matplotlib.pyplot as plt
-import plotnine as pn
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
 import warnings
+import pybktree
 
 
 def _get_1BP_mutants(seq:str, position:int):
@@ -156,24 +152,19 @@ def get_most_common_true_sequences(read_counter, topN:int):
     e.g. a VERY abundant true sequence might be ~100000reads, and 1% (1000)
     will result in shadows. these shadows might end up in the top100 itself
     """
+    from rnaseqtools.seqerrors.CB_errors import hamming_distance
+    bktree = pybktree.BKTree(hamming_distance)
+    DISTANCE = 2
+
     most_common = set()
-    flagged_shadows = set()  # all sequences that we've seen as a shadow of a more abundant molecule
     for seq, freq in tqdm.tqdm(collections.Counter(read_counter).most_common(topN), desc='finding most common seqs'):
-
-        # if its already flagged as shadow, skip it
-        if seq in flagged_shadows:
+        # if the sequence is close to an an already accepted true seq
+        if len(bktree.find(seq, DISTANCE)) > 0:
             continue
+        else:
+            bktree.add(seq)
+            most_common.add(seq)
 
-        most_common.add(seq)
-
-        # flag all 1BP or 2BP mutants
-        for mutant in _get_1BP_2BP_mutants(seq):
-            flagged_shadows.add(mutant)
-
-        # # flag 1BP mutatnts
-        # for i in range(len(seq)):
-        #     for mutant in _get_1BP_mutants(seq, position=i):
-        #         flagged_shadows.add(mutant)
     return most_common
 
 

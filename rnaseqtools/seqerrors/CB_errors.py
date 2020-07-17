@@ -41,9 +41,37 @@ to speed thigns up:
     - if yes: increase error_free coutn
     - if no: check the bktree for similar cells: if theres a single one: increase the error count for that one
 """
+def create_error_per_cbumi_counters(bamfile):
+    """
+    for each barcode,count the occurances
+    """
+    bam = pysam.AlignmentFile(bamfile)
+    read_counter = collections.defaultdict(int)
 
+    for read in tqdm.tqdm(bam.fetch()):
+        if read.has_tag('CR') and read.has_tag('UR'):  # UR and CR are the RAW uncorrected sequences
+            CB = read.get_tag('CR')
+            UMI = read.get_tag('UR')
+            read_counter[f'{CB}_{UMI}'] += 1
 
-def create_error_per_cb_counters(bamfile, whitelist):
+    return read_counter
+
+def create_error_per_cb_counters(bamfile):
+    """
+    for each barcode,count the occurances
+    """
+    bam = pysam.AlignmentFile(bamfile)
+    read_counter = collections.defaultdict(int)
+
+    for read in tqdm.tqdm(bam.fetch()):
+        if read.has_tag('CR') and read.has_tag('UR'):  # UR and CR are the RAW uncorrected sequences
+            CB = read.get_tag('CR')
+            # UMI = read.get_tag('UR')
+            read_counter[CB] += 1
+
+    return read_counter
+
+def create_error_per_cb_counters_old(bamfile, whitelist):
     """
     for each barcode, check if its in the whitelist, and count the occurances
     """
@@ -91,8 +119,12 @@ if __name__ == '__main__':
 
 
     import pickle
-    with open('/home/mstrasse/seqerror.pkl', 'wb') as fh:
+    with open('/home/mstrasse/seqerror_R1.pkl', 'wb') as fh:
         pickle.dump(res_dict ,fh)
+
+    import pickle
+    with open('/home/mstrasse/seqerror_R1.pkl', 'rb') as fh:
+        res_dict = pickle.load(fh)
 
     for s in samples:
         counter_no_error, counter_some_error = res_dict[s]
@@ -101,9 +133,7 @@ if __name__ == '__main__':
 
         print(f'{s}: Error rate: {U1 / (U1 + U0):.4f}')
 
-    import pickle
-    with open('/home/mstrasse/seqerror.pkl', 'rb') as fh:
-        res_dict = pickle.load(fh)
+
 
 
 
