@@ -152,12 +152,13 @@ def get_most_common_true_sequences(read_counter, topN:int):
     e.g. a VERY abundant true sequence might be ~100000reads, and 1% (1000)
     will result in shadows. these shadows might end up in the top100 itself
     """
+    assert isinstance(read_counter, collections.Counter)
     from rnaseqtools.seqerrors.CB_errors import hamming_distance
     bktree = pybktree.BKTree(hamming_distance)
     DISTANCE = 2
 
     most_common = set()
-    for seq, freq in tqdm.tqdm(collections.Counter(read_counter).most_common(topN), desc='finding most common seqs'):
+    for seq, freq in tqdm.tqdm(read_counter.most_common(topN), desc='finding most common seqs'):
         # if the sequence is close to an an already accepted true seq
         if len(bktree.find(seq, DISTANCE)) > 0:
             continue

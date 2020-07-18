@@ -5,7 +5,6 @@ import pysam
 import tqdm
 # import pybktree
 import collections
-import pandas as pd
 import toolz
 
 """
@@ -46,7 +45,7 @@ def create_error_per_cbumi_counters(bamfile):
     for each barcode,count the occurances
     """
     bam = pysam.AlignmentFile(bamfile)
-    read_counter = collections.defaultdict(int)
+    read_counter = collections.Counter()
 
     for read in tqdm.tqdm(bam.fetch()):
         if read.has_tag('CR') and read.has_tag('UR'):  # UR and CR are the RAW uncorrected sequences
@@ -56,12 +55,13 @@ def create_error_per_cbumi_counters(bamfile):
 
     return read_counter
 
+
 def create_error_per_cb_counters(bamfile):
     """
     for each barcode,count the occurances
     """
     bam = pysam.AlignmentFile(bamfile)
-    read_counter = collections.defaultdict(int)
+    read_counter = collections.Counter()
 
     for read in tqdm.tqdm(bam.fetch()):
         if read.has_tag('CR') and read.has_tag('UR'):  # UR and CR are the RAW uncorrected sequences
@@ -70,27 +70,6 @@ def create_error_per_cb_counters(bamfile):
             read_counter[CB] += 1
 
     return read_counter
-
-def create_error_per_cb_counters_old(bamfile, whitelist):
-    """
-    for each barcode, check if its in the whitelist, and count the occurances
-    """
-    bam = pysam.AlignmentFile(bamfile)
-    counter_no_error = collections.defaultdict(int)
-    counter_some_error = collections.defaultdict(int)
-
-    # counter = 0
-    # counter_max = 100_000_000
-    for read in tqdm.tqdm(bam.fetch()):
-        if read.has_tag('CR') and read.has_tag('UR'):  # UR and CR are the RAW uncorrected sequences
-            CB = read.get_tag('CR')
-            # UMI = read.get_tag('UR')
-
-            if CB in whitelist:
-                counter_no_error[CB] += 1
-            else:
-                counter_some_error[CB] += 1
-    return counter_no_error, counter_some_error
 
 
 if __name__ == '__main__':
