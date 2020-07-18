@@ -169,10 +169,34 @@ def get_most_common_true_sequences(read_counter, topN:int):
     return most_common
 
 
-def read_counter_to_df(read_counter, topN):
+def read_counter_to_df_total(read_counter, topN):
     """
     turns a read counter (which has real and shadow molecules) into
-    a dataframe, each row being a true barcode (based on frequency, topN
+    a dataframe, with counts of real and shadow reads
+    each row is a true barcode (based on frequency, topN
+    barcodes will be used),  and the number of real reads
+    and shadows annotated
+
+    THIS IS NOT POSITITON SPECIFIC!!
+    """
+    df_seq = []
+    most_common = get_most_common_true_sequences(read_counter, topN)
+    print(len(most_common))
+    for seq in most_common:
+        shadow_per_position = _get_number_of_shadows(seq, read_counter)
+        n_shadow = sum(shadow_per_position.values())
+        df_seq.append({'seq': seq, 'n_shadow': n_shadow,
+                       'n_real': read_counter[seq]})
+
+    df_seq = pd.DataFrame(df_seq)
+    return df_seq
+
+
+def read_counter_to_df_position(read_counter, topN):
+    """
+    turns a read counter (which has real and shadow molecules) into
+    a dataframe, with position specific counts of real and shadow reads
+    each row is a true barcode (based on frequency, topN
     barcodes will be used),  and the number of real reads
     and shadows annotated
     """
