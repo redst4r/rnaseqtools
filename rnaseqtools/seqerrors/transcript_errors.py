@@ -146,29 +146,45 @@ def estimate_shadow_3prime(bamfile, region):
     return read_counter
 
 
-def get_most_common_true_sequences(read_counter, topN:int):
+def get_most_common_true_sequences(read_counter, topN:int, whitelist_fn=None):
     """
     get the most abundant sequences, but also make sure that shadows dont sneak in.
     e.g. a VERY abundant true sequence might be ~100000reads, and 1% (1000)
     will result in shadows. these shadows might end up in the top100 itself
+    Optionally, provide a whitelist_fn if true barcodes are known! this function
+    has to return True when called with a sequence. We will still check if its sufficiently far from any other common sequence
     """
+    assert isinstance(read_counter, collections.Counter)
     from rnaseqtools.seqerrors.CB_errors import hamming_distance
     bktree = pybktree.BKTree(hamming_distance)
     DISTANCE = 2
 
     most_common = set()
-    for seq, freq in tqdm.tqdm(collections.Counter(read_counter).most_common(topN), desc='finding most common seqs'):
-        # if the sequence is close to an an already accepted true seq
-        if len(bktree.find(seq, DISTANCE)) > 0:
-            continue
+    # read_counter = collections.Counter(read_counter)
+    for seq, freq in tqdm.tqdm(read_counter.most_common(), desc='finding most common seqs'):
+        if len(most_common) > topN:
+            break
+
+        if whitelist_fn:
+            if whitelist_fn(seq):
+                if len(bktree.find(seq, DISTANCE)) > 0:
+                    continue
+                else:
+                    bktree.add(seq)
+                    most_common.add(seq)
+
         else:
-            bktree.add(seq)
-            most_common.add(seq)
+            # if the sequence is close to an an already accepted true seq
+            if len(bktree.find(seq, DISTANCE)) > 0:
+                continue
+            else:
+                bktree.add(seq)
+                most_common.add(seq)
 
     return most_common
 
 
-def read_counter_to_df(read_counter, topN):
+def read_counter_to_df(read_counter, topN, whitelist_fn=None):
     """
     turns a read counter (which has real and shadow molecules) into
     a dataframe, each row being a true barcode (based on frequency, topN
@@ -176,7 +192,7 @@ def read_counter_to_df(read_counter, topN):
     and shadows annotated
     """
     df_seq = []
-    most_common = get_most_common_true_sequences(read_counter, topN)
+    most_common = get_most_common_true_sequences(read_counter, topN, whitelist_fn)
     print(len(most_common))
     for seq in most_common:
         shadow_per_position = _get_number_of_shadows(seq, read_counter)
@@ -188,12 +204,12 @@ def read_counter_to_df(read_counter, topN):
     return df_seq
 
 
-def read_counter_to_subsitution_table(read_counter, topN):
+def read_counter_to_subsitution_table(read_counter, topN, whitelist_fn=None):
     """
     estimate real and shadow molecules, and keep track of which mutations/errors occured!
     """
     df_substitutions = []
-    most_common = get_most_common_true_sequences(read_counter, topN)
+    most_common = get_most_common_true_sequences(read_counter, topN, whitelist_fn)
     print(len(most_common))
     for seq in most_common:
         for pos in range(len(seq)):  # check all mutation at base-position
