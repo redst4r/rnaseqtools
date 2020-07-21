@@ -5,6 +5,7 @@ import os
 import numpy as np
 import pandas as pd
 from bioservices import biomart
+import pathlib
 # datasets = s.datasets("ENSEMBL_MART_ENSEMBL")
 
 # filters = s.filters('hsapiens_gene_ensembl')
@@ -69,7 +70,7 @@ def biomart_query_all(verbose=False, extra_fields=None):
     pulls down all entries from BIOMART for Human: symbol, trasncript, gene, length, type
     """
 
-    THE_FILE = '/home/michi/postdoc_seattle/rnaseqtools/rnaseqtools/biomart_all.csv'
+    THE_FILE = pathlib.Path(__file__).parent / 'biomart_all.csv.gz'
 
     if os.path.exists(THE_FILE):
         return pd.read_csv(THE_FILE)
