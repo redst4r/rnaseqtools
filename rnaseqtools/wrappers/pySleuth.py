@@ -4,11 +4,8 @@ import pandas as pd
 def sleuth_wrapper(exp_design_matrix, full_model_string, reduced_model_string, dry_run=False, outfile=None):
     fname_design = tempfile.NamedTemporaryFile().name
     fname_de_table = tempfile.NamedTemporaryFile().name
-#     fname_data = tempfile.NamedTemporaryFile().name
     exp_design_matrix.to_csv(fname_design)
 
-    rpy2.robjects.r('library(Biobase)')
-    rpy2.robjects.r('library(sleuth)')
     sleuth_load_design_str = f's2c <- read.table("{fname_design}", header = TRUE, stringsAsFactors=FALSE, sep=",")'
     biomart_str = """
     mart <- biomaRt::useMart(biomart = "ENSEMBL_MART_ENSEMBL",
@@ -36,6 +33,8 @@ def sleuth_wrapper(exp_design_matrix, full_model_string, reduced_model_string, d
                          sleuth_table_str,
                          sleuth_write_str])
 
+    rpy2.robjects.r('library(Biobase)')
+    rpy2.robjects.r('library(sleuth)')
     rpy2.robjects.r(sleuth_load_design_str)
 
     print('biomart')
