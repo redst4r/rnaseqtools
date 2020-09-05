@@ -1,15 +1,15 @@
 import tempfile
 import rpy2.robjects
 import pandas as pd
-def sleuth_wrapper(exp_design_matrix, full_model_string, reduced_model_string, dry_run=False, outfile=None):
+def sleuth_wrapper(exp_design_matrix, full_model_string, reduced_model_string, dry_run=False, outfile=None, organism='hsapiens_gene_ensembl'):
     fname_design = tempfile.NamedTemporaryFile().name
     fname_de_table = tempfile.NamedTemporaryFile().name
     exp_design_matrix.to_csv(fname_design)
 
     sleuth_load_design_str = f's2c <- read.table("{fname_design}", header = TRUE, stringsAsFactors=FALSE, sep=",")'
-    biomart_str = """
+    biomart_str = f"""
     mart <- biomaRt::useMart(biomart = "ENSEMBL_MART_ENSEMBL",
-                             dataset = "hsapiens_gene_ensembl",
+                             dataset = "{organism}",
                              host = 'ensembl.org')
     t2g <- biomaRt::getBM(attributes = c("ensembl_transcript_id", "ensembl_gene_id",
                                          "external_gene_name", "transcript_biotype"), mart = mart)
@@ -57,3 +57,7 @@ def sleuth_wrapper(exp_design_matrix, full_model_string, reduced_model_string, d
 
 
     return pd.read_csv(fname_de_table)
+
+
+# for live shiny app:
+# sleuth_live(so, options=options(browser = "kfmclient newTab"))
