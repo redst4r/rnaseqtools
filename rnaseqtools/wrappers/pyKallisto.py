@@ -78,7 +78,7 @@ def kallist_bootstrap_2_adata(fname):
     turns a bootstrapped kallisto quantification into a scnpy object,
     where each bootstrap is considered a separate datapoint/sample!
     """
-    with h5py.File(fname) as qq:
+    with h5py.File(fname, 'r') as qq:
         n_bootstraps = len(qq['bootstrap'])
         X = np.stack([qq['bootstrap'][f'bs{i}'][:] for i in range(n_bootstraps)])
         obs = pd.DataFrame()
