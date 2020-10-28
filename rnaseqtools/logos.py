@@ -25,8 +25,11 @@ def sequence_logo(sequences):
     LOGO = LOGO[:4,:]
     # LOGO = LOGO+1e-16
     probs = LOGO/ LOGO.sum(0, keepdims=True)
-    entropy = -np.sum(probs * np.log2(probs), 0)
-
+    
+    # entropy, but take care of the probs==0 (0 *log(0) := 0)
+    _q = probs * np.log2(probs)
+    _q[probs==0] = 0
+    entropy = -np.sum(_q, 0)
     en = (1/np.log(2)) * (4-1)/(2*len(sequences))
     information_content = np.log2(4) * (entropy + en)
 
