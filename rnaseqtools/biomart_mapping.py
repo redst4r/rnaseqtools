@@ -1,17 +1,13 @@
+import warnings
+import pathlib
 import io
+import os
 import collections
 import tqdm
-import os
 import numpy as np
 import pandas as pd
 from bioservices import biomart
-import pathlib
-# datasets = s.datasets("ENSEMBL_MART_ENSEMBL")
 
-# filters = s.filters('hsapiens_gene_ensembl')
-# filters['']
-
-# s.attributes('hsapiens_gene_ensembl')
 
 """
 the main function to use with the biomart data!!
@@ -26,11 +22,8 @@ def load_biomart():
       type == transcript_biotype
       entrezgene
     """
-    if not os.path.exists('transcript2gene_bulk_biomart_full.csv'):
-        df_biomart = biomart_query_all()
-        df_biomart.to_csv('transcript2gene_bulk_biomart_full.csv')
-    else:
-        df_biomart = pd.read_csv('transcript2gene_bulk_biomart_full.csv', index_col=0)
+    df_biomart = biomart_query_all()
+
 
     # sometimes we get multiple entries per transcript_id, get rid of these
     # dups = df.ensembl_transcript_id.value_counts().index[(df.ensembl_transcript_id.value_counts() > 1)]
@@ -42,7 +35,6 @@ def load_biomart():
     df_biomart.rename({'hgnc_symbol': 'symbol', 'transcript_biotype': 'type'}, axis=1, inplace=True)
 
     return df_biomart
-
 
 
 """
@@ -65,14 +57,14 @@ def biomart_query_genes(gene_ids, batchsize=10000, verbose=False):
     return biomart_query(gene_ids, 'ensembl_gene_id', batchsize, verbose)
 
 
-def biomart_query_all(verbose=False, extra_fields=None):
+def biomart_query_all(verbose=False, extra_fields=None, force_download=False):
     """
     pulls down all entries from BIOMART for Human: symbol, trasncript, gene, length, type
     """
 
     THE_FILE = pathlib.Path(__file__).parent / 'biomart_all.csv.gz'
 
-    if os.path.exists(THE_FILE):
+    if not force_download and os.path.exists(THE_FILE):
         return pd.read_csv(THE_FILE)
 
     s = biomart.BioMart(host='uswest.ensembl.org')
