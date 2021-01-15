@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 from bioservices import biomart
 
+HOST = 'uswest.ensembl.org'
+
 
 """
 the main function to use with the biomart data!!
@@ -22,6 +24,7 @@ def load_biomart():
       type == transcript_biotype
       entrezgene
     """
+    warnings.warn('dont use this! does some weird filtering. just load the pure dataframe with biomart_query_all()', DeprecationWarning)
     df_biomart = biomart_query_all()
 
 
@@ -45,7 +48,7 @@ def print_attributes():
     """
     thats all the atribures that we can get from biomart for a gene/transcript
     """
-    s = biomart.BioMart(host='uswest.ensembl.org')
+    s = biomart.BioMart(host=HOST)
     return list(s.attributes('hsapiens_gene_ensembl').keys())
 
 
@@ -65,9 +68,9 @@ def biomart_query_all(verbose=False, extra_fields=None, force_download=False):
     THE_FILE = pathlib.Path(__file__).parent / 'biomart_all.csv.gz'
 
     if not force_download and os.path.exists(THE_FILE):
-        return pd.read_csv(THE_FILE)
+        return pd.read_csv(THE_FILE, index_col=0)
 
-    s = biomart.BioMart(host='uswest.ensembl.org')
+    s = biomart.BioMart(host=HOST)
     s.new_query()
     s.add_dataset_to_xml('hsapiens_gene_ensembl')
 
@@ -85,6 +88,7 @@ def biomart_query_all(verbose=False, extra_fields=None, force_download=False):
         'chromosome_name',
         'start_position',
         'end_position',
+        'external_synonym',
     ]
 
     if extra_fields:
