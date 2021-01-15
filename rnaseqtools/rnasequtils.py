@@ -156,9 +156,9 @@ def trim_reads(fastq_file, outfile, trimlength):
     """
     if not outfile.endswith('gz'):
         outfile = outfile+'.gz'
-        
+
     fastq_iter = read_fastq_seqs_bare(fastq_file)
-    
+
     with gzip.open(outfile, 'w') as fh:
         for seq_header, seq, qual_header, qual in tqdm.tqdm(fastq_iter):
             seq = seq[:trimlength]

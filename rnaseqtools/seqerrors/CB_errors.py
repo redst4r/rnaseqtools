@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import os
 import pysam
 import tqdm
 # import pybktree
@@ -40,6 +39,8 @@ to speed thigns up:
     - if yes: increase error_free coutn
     - if no: check the bktree for similar cells: if theres a single one: increase the error count for that one
 """
+
+
 def create_error_per_cbumi_counters(bamfile):
     """
     for each barcode,count the occurances
@@ -122,7 +123,6 @@ if __name__ == '__main__':
     - it will take forever to do it on all CBs, but take the top1000 frequent ones
     """
 
-
     def estimate_error_rate_shadows(counter_no_error, counter_some_error):
         most_common_CBS = collections.Counter(counter_no_error).most_common(1000)
         shadows = {}
@@ -131,9 +131,9 @@ if __name__ == '__main__':
         for cb_freq in tqdm.tqdm(most_common_CBS):
             cb, freq = cb_freq
 
-            shadow_counts  = []
+            shadow_counts = []
             for i in range(16):
-                for base in ['A','C','G','T']:
+                for base in ['A', 'C', 'G', 'T']:
                     new = cb[:i] + base + cb[i+1:]
                     if cb == new:
                         continue
@@ -148,9 +148,7 @@ if __name__ == '__main__':
 
         return df
 
-
     dfs = toolz.valmap(lambda x: estimate_error_rate_shadows(x[0], x[1]), res_dict)
-
 
     """
     the above its the per read error rate:  #correct reads / #wrong reads

@@ -49,7 +49,7 @@ def load_biomart():
 helper functions to create the biomart dataframe
 """
 
-def print_attribtues():
+def print_attributes():
     """
     thats all the atribures that we can get from biomart for a gene/transcript
     """

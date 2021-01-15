@@ -5,7 +5,7 @@ def sleuth_wrapper(exp_design_matrix, full_model_string, reduced_model_string, d
     fname_design = tempfile.NamedTemporaryFile().name
     fname_de_table = tempfile.NamedTemporaryFile().name
     exp_design_matrix.to_csv(fname_design)
-    
+
     lib_loading = """
     library(Biobase)
     library(sleuth)
@@ -65,3 +65,4 @@ def sleuth_wrapper(exp_design_matrix, full_model_string, reduced_model_string, d
 
 # for live shiny app:
 # sleuth_live(so, options=options(browser = "kfmclient newTab"))
+# or options(browser='/usr/bin/brave')
