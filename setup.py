@@ -1,5 +1,4 @@
 from setuptools import setup, find_packages
-import rnaseqtools
 
 setup(name='rnaseqtools',
       version=0.1,
@@ -11,6 +10,7 @@ setup(name='rnaseqtools',
       license='GNU GPL 3',
       keywords='RNAseq',
       packages=find_packages(),
+      include_package_data=True,
       install_requires=[
           'toolz',
           'numpy',
@@ -20,6 +20,6 @@ setup(name='rnaseqtools',
           'pandas',
           'bioservices',
           'pyliftover',
-          'rpy2',
+          # 'rpy2', optional
           ],
       zip_safe=False)

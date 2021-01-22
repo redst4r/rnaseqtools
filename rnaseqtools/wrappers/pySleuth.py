@@ -1,6 +1,8 @@
 import tempfile
 import rpy2.robjects
 import pandas as pd
+
+
 def sleuth_wrapper(exp_design_matrix, full_model_string, reduced_model_string, dry_run=False, outfile=None, organism='hsapiens_gene_ensembl'):
     fname_design = tempfile.NamedTemporaryFile().name
     fname_de_table = tempfile.NamedTemporaryFile().name
@@ -58,7 +60,6 @@ def sleuth_wrapper(exp_design_matrix, full_model_string, reduced_model_string, d
 
     if outfile:
         rpy2.robjects.r(f'sleuth_save(so, "{outfile}")')
-
 
     return pd.read_csv(fname_de_table)
 
