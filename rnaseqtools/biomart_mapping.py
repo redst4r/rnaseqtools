@@ -45,6 +45,10 @@ def load_biomart():
 helper functions to create the biomart dataframe
 """
 
+def _biomart_df_postprocess(df):
+    df['chromosome_name'] = df['chromosome_name'].apply(lambda x: str(x))
+    return df
+
 
 def print_attributes():
     """
@@ -70,7 +74,7 @@ def biomart_query_all(verbose=False, extra_fields=None, force_download=False):
     THE_FILE = pathlib.Path(__file__).parent / 'biomart_all.csv.gz'
 
     if not force_download and os.path.exists(THE_FILE):
-        return pd.read_csv(THE_FILE, index_col=0)
+        return _biomart_df_postprocess(pd.read_csv(THE_FILE, index_col=0))
 
     s = biomart.BioMart(host=HOST)
     s.new_query()
@@ -109,6 +113,8 @@ def biomart_query_all(verbose=False, extra_fields=None, force_download=False):
     df = pd.read_csv(io.StringIO(res), sep='\t', header=None)
     df.columns = fields
     df = df.drop_duplicates()
+
+    df = _biomart_df_postprocess(df)
 
     df.to_csv(THE_FILE)
 
