@@ -5,7 +5,7 @@ import pybustools.pybustools as pb
 from pybustools.butterfly import make_ec2gene_dict
 import tqdm
 import pandas as pd
-
+from rnaseqtools.seqerrors.utils import hamming_distance
 """
 estimating the sequencing error rates in the UMIs
 
@@ -14,14 +14,8 @@ and are only 1BP appart. These are most likely sequencing errors
 """
 
 
-def hamming_distance(first, second):
-    ''' returns the edit distance/hamming distances between
-    its two arguements '''
 
-    dist = sum([not a == b for a, b in zip(first, second)])
-    return dist
-
-def groupby_gene_and_umi(bus_records, ec2gene_dict):
+def _groupby_gene_and_umi(bus_records, ec2gene_dict):
     """
     group a set of record by 1) gene 2) UMI and record the mulitplicity (r.COUNT)
 
@@ -47,7 +41,7 @@ def groupby_gene_and_umi(bus_records, ec2gene_dict):
     return dict(gene2umilist)
 
 
-def group_UMIs_into_cliques(umis_from_gene, cb,gene, topN=100):
+def _group_UMIs_into_cliques(umis_from_gene, cb, gene, topN=100):
     """
     greedy assignment of UMIs into cliques.
 
@@ -55,6 +49,9 @@ def group_UMIs_into_cliques(umis_from_gene, cb,gene, topN=100):
     we look at the x most abundant UMIs (in terms of reads).
     any UMI that is 1BP away and less abundant will be assigned to taht
     clique (and removed from the pool).
+
+    :returns: a list of dictionaries (one per topN UMI), containing 
+    the gene, cb, original UMI and how many reads had 1,2,3 ... errors in that CB/UMI/gene
     """
 
     already_processed = set()
@@ -104,7 +101,7 @@ def UMI_errors(busfolder, t2g, max_entries=1_000_000):
             continue
 
         counter += 1
-        s = groupby_gene_and_umi(bus_records, ec2gene_dict)
+        s = _groupby_gene_and_umi(bus_records, ec2gene_dict)
 
         for gene, umi_set in s.items():
     ## this is too expensive, takes 99% CPU
@@ -112,7 +109,7 @@ def UMI_errors(busfolder, t2g, max_entries=1_000_000):
     #         t['gene'] = gene
     #         t['CB'] = cb
 
-            t = group_UMIs_into_cliques(umi_set, cb, gene)
+            t = _group_UMIs_into_cliques(umi_set, cb, gene)
             res.extend(t)
 
         if counter % 100 == 0:
@@ -123,3 +120,5 @@ def UMI_errors(busfolder, t2g, max_entries=1_000_000):
     res = pd.DataFrame(res)
 
     return res
+
+

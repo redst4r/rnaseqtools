@@ -5,6 +5,8 @@ import tqdm
 # import pybktree
 import collections
 import toolz
+from rnaseqtools.seqerrors.utils import hamming_distance, _load_whitelist
+
 
 """
 now the shadow regresion thing:
@@ -14,21 +16,6 @@ now the shadow regresion thing:
 - it will take forever to do it on all CBs, but take the top1000 frequent ones
 We later might use the UMIs t figure out whats PCR error or seq
 """
-
-
-def _load_whitelist(fname):
-    "loads a whitelist of cellbarcdes as a set"
-    with open(fname, 'r') as fh:
-        whitelist = set(_.strip() for _ in fh.readlines())
-    return whitelist
-
-
-def hamming_distance(first, second):
-    ''' returns the edit distance/hamming distances between
-    its two arguements '''
-
-    dist = sum([not a == b for a, b in zip(first, second)])
-    return dist
 
 
 """

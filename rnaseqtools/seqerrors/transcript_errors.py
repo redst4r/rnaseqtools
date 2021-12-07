@@ -98,13 +98,14 @@ def read_filter(read):
     """
     filtering the R2 for uniquely mapped, no gaps, no N
     """
-    if read.is_duplicate:
-        return False
-
-    if read.is_secondary or read.is_supplementary or read.is_unmapped:
-        return False
-
-    if not read.has_tag('CR') or not read.has_tag('UR'):  # UR and CR are the RAW uncorrected sequences
+    if any([
+        read.is_duplicate,
+        read.is_secondary,
+        read.is_supplementary,
+        read.is_unmapped,
+        not read.has_tag('CR'),   # UR and CR are the RAW uncorrected sequences
+        not read.has_tag('UR')
+    ]):
         return False
 
     length = len(read.query_sequence)
