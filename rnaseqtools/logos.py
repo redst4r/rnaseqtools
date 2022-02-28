@@ -16,7 +16,9 @@ BASE_TO_INT = {'A':0,
 def sequence_logo(sequences):
 
     LOGO = np.zeros((5,20))
+    n_seq = 0  # counting the number of seqs, so that sequences can be a generator
     for seq in tqdm.tqdm(sequences):
+        n_seq += 1
         for i, bp in enumerate(seq):
             LOGO[BASE_TO_INT[bp],i] += 1
 
@@ -30,7 +32,7 @@ def sequence_logo(sequences):
     _q = probs * np.log2(probs)
     _q[probs==0] = 0
     entropy = -np.sum(_q, 0)
-    en = (1/np.log(2)) * (4-1)/(2*len(sequences))
+    en = (1/np.log(2)) * (4-1)/(2*n_seq)
     information_content = np.log2(4) * (entropy + en)
 
     heigh = probs * information_content

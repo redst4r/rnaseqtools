@@ -8,6 +8,15 @@ from pyliftover import LiftOver
 from rnaseqtools.fastqio import read_fastq_seqs_bare
 import gzip
 
+
+translation_table = {ord('A'): 'T', ord('T'):'A', ord('G'): 'C', ord('C'): 'G' }
+def reverse_complement(seq):
+    """
+    reverse complement of a sequence
+    """
+    return seq.translate(translation_table)[::-1]
+
+
 def coordinate_liftover(from_genome:str, to_genome:str, chromosomes:list, positions:list):
     """
     from/to: hg19/hg38
