@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='rnaseqtools',
-      version=0.1,
+      version=0.2,
       description='Handling RNAseq data, wrappers for aligners, functions on bamfiles',
       url='http://github.com/redst4r/rnaseqtools/',
       author='redst4r',

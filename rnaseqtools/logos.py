@@ -5,7 +5,6 @@ from matplotlib.font_manager import FontProperties
 import numpy as np
 import matplotlib.pyplot as plt
 import tqdm
-
 BASE_TO_INT = {'A':0,
                'T':1,
                'C':2,
@@ -13,30 +12,44 @@ BASE_TO_INT = {'A':0,
                'X':4,
                'N':4}
 
-def sequence_logo(sequences):
+class SequenceLogo():
 
-    LOGO = np.zeros((5,20))
-    n_seq = 0  # counting the number of seqs, so that sequences can be a generator
-    for seq in tqdm.tqdm(sequences):
-        n_seq += 1
+    def __init__(self, seq_length):
+        self.seg_length = seq_length
+        self.counts = np.zeros((5, self.seg_length))
+        self.n_sequences = 0
+
+    def _add_sequence(self, seq):
+        assert len(seq) == self.seg_length
+        self.n_sequences += 1
         for i, bp in enumerate(seq):
-            LOGO[BASE_TO_INT[bp],i] += 1
+            self.counts[BASE_TO_INT[bp],i] += 1
 
-    # entropy per position
-    #pseudocounts
-    LOGO = LOGO[:4,:]
-    # LOGO = LOGO+1e-16
-    probs = LOGO/ LOGO.sum(0, keepdims=True)
-    
-    # entropy, but take care of the probs==0 (0 *log(0) := 0)
-    _q = probs * np.log2(probs)
-    _q[probs==0] = 0
-    entropy = -np.sum(_q, 0)
-    en = (1/np.log(2)) * (4-1)/(2*n_seq)
-    information_content = np.log2(4) * (entropy + en)
+    def add_sequences(self, sequences):
+        for seq in tqdm.tqdm(sequences):
+            self._add_sequence(seq)
 
-    heigh = probs * information_content
-    return heigh, probs
+    def entropy(self):
+        # entropy per position
+        #pseudocounts
+        LOGO = self.counts[:4,:]
+        # LOGO = LOGO+1e-16
+        probs = LOGO/ LOGO.sum(0, keepdims=True)
+
+        # entropy, but take care of the probs==0 (0 *log(0) := 0)
+        _q = probs * np.log2(probs)
+        _q[probs==0] = 0
+        entropy = -np.sum(_q, 0)
+        en = (1/np.log(2)) * (4-1)/(2*self.n_sequences)
+        information_content = np.log2(4) * (entropy + en)
+        heigh = probs * information_content
+
+        return heigh, probs
+
+    def plot_logo(self):
+        heigh, prob2 = self.entropy()
+        return _plot_logo_from_scores(array_to_logo_format(heigh))
+
 
 def array_to_logo_format(array):
     scores = []
@@ -46,10 +59,6 @@ def array_to_logo_format(array):
         scores.append(tmp)
     return scores
 
-
-def plot_logo(sequences):
-    heigh, prob2 = sequence_logo(sequences)
-    return _plot_logo_from_scores(array_to_logo_format(heigh))
 
 def _plot_logo_from_scores(all_scores):
 
@@ -93,9 +102,4 @@ def _plot_logo_from_scores(all_scores):
     plt.ylim((0, maxi))
     plt.tight_layout()
     return fig, ax
-
-
-if __name__ == '__main__':
-
-    heigh, prob = sequence_logo(['AAAA', 'TTAA'])
-    plot_logo()
+	
