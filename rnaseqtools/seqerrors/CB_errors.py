@@ -5,8 +5,8 @@ import tqdm
 # import pybktree
 import collections
 import toolz
-from rnaseqtools.seqerrors.utils import hamming_distance, _load_whitelist
-
+from rnaseqtools.seqerrors.utils import _load_whitelist # hamming_distance
+from rnaseqtools.fastqio import read_fastq_seqs_multiple_lanes
 
 """
 now the shadow regresion thing:
@@ -58,6 +58,27 @@ def create_error_per_cb_counters(bamfile):
             read_counter[CB] += 1
 
     return read_counter
+
+def create_error_per_cb_counter_fastq(fastq_R1_filelist: list, cb_len=16, umi_len=12):
+    """
+    counts cell-barcode sequences in the fastq files
+    useful is the bam file is not available
+
+    :param fastq_R1_filelist: list of fastq filenames, containing the R1 read
+    :param cb_len: length of the CB   (seq=CB+UMI)
+    :param umi_len: length of the UMI
+
+    :returns: a collections.Counter with the CB abundances
+    """
+    I = read_fastq_seqs_multiple_lanes(fastq_R1_filelist)
+    read_counter = collections.Counter()
+    for _, seq in tqdm.tqdm(I):
+        # assert len(seq) == cb_len + umi_len  #TODO uncomment this!!
+        cb = seq[:cb_len]
+        # umi = seq[cb_len:]
+        read_counter[cb] += 1
+    return read_counter
+
 
 
 if __name__ == '__main__':
