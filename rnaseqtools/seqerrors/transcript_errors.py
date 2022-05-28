@@ -20,18 +20,6 @@ import warnings
 import pybktree
 from rnaseqtools.seqerrors.utils import hamming_distance
 
-def rust_output_to_error_estimate(df_rust):
-    n_bases = len([_ for _ in df_rust.columns if _.startswith('position_')])
-    df_error2 = []
-    for i in range(n_bases):
-        col = f'position_{i}'
-        _df = df_rust[['total', col]].rename({'total':'n_real', col:'n_shadow'}, axis=1)
-        s = estimate_error_rate(_df)
-        s['position'] = i
-        df_error2.append(s)
-    df_error2 = pd.DataFrame(df_error2)
-    return df_error2
-
 
 
 def _get_1BP_mutants(seq:str, position:int):
@@ -236,6 +224,7 @@ def read_counter_to_subsitution_table(read_counter, topN):
     """
     estimate real and shadow molecules, and keep track of which mutations/errors occured!
     """
+    raise ValueError('untested')
     df_substitutions = []
     most_common = get_most_common_true_sequences(read_counter, topN)
     print(len(most_common))
@@ -281,12 +270,17 @@ def estimate_error_rate(df):
     naive = np.mean(df.n_shadow / (df.n_shadow+df.n_real))
 
     # binomail "regression": actually just estimating the paramter of a binomial,
+    # actuall all of this could be replaced by :
+    # df['n_shadow'] / (df['n_shadow'] + df['n_real'])
+    # and binomial CIs
     if np.all(df['n_shadow'] == 0):
         theta_binom = 0
         theta_binom_c5 = 0
         theta_binom_c95 = 0
     else:
-        y = df[['n_shadow', 'n_real']].values
+        df2 = df.copy()
+        df2['total'] = df2['n_shadow'] + df2['n_real']
+        y = df2[['n_shadow', 'total']].values
         r = np.ones(len(y))
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
@@ -306,5 +300,5 @@ def estimate_error_rate(df):
         robust_err = robust_beta / (1 + robust_beta)
     return {'error_linear': error_linear, 'error_linear_c5': error_c5, 'error_linear_c95': error_c95,
             'error_naive': naive,
-            'error_binom': theta_binom, 'error_binom_c5': theta_binom_c5, 'theta_binom_c95': theta_binom_c95,
+            'error_binom': theta_binom, 'error_binom_c5': theta_binom_c5, 'error_binom_c95': theta_binom_c95,
             'error_robust': robust_err}
