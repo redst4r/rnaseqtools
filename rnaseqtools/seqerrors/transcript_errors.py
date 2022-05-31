@@ -166,6 +166,22 @@ def get_most_common_true_sequences(read_counter, topN:int, verbose=False):
     get the most abundant sequences, but also make sure that shadows dont sneak in.
     e.g. a VERY abundant true sequence might be ~100000reads, and 1% (1000)
     will result in shadows. these shadows might end up in the top100 itself
+
+    another problem: we only add to the BKTree if no related element is present
+    However, consider three items A:1000,B:100,C:10 in descending frequency and
+     A-1->B-1->C  (A and B are one distance, B and C are one distance, A,C are two distance)
+    - A gets added
+    - we encounter B and skip it(since its a shadow of A, which is more frequent)
+    - we encounter C (which is a shadow of B). Since B was never added to the BKTree
+      we would consider C a true molecule (even though a MORE FREQUENT seq within distance 1 exists!!)
+
+    Hence we really have to add the shadows to the BKTree itself.
+
+    This changes the criterion for the final list to:
+    - any item A in this list DOES NOT have a 1-distance neigbour B that is more frequent than A
+
+    So far we have kind of cirumvented that issue with DISTANCE=2 (essentially blacklisting B and C),
+    but that doesnt solve the problem in prinicple (we could come across D:1)
     """
     assert isinstance(read_counter, collections.Counter)
     bktree = pybktree.BKTree(hamming_distance)

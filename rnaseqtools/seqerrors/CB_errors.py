@@ -73,7 +73,7 @@ def create_error_per_cb_counter_fastq(fastq_R1_filelist: list, cb_len=16, umi_le
     I = read_fastq_seqs_multiple_lanes(fastq_R1_filelist)
     read_counter = collections.Counter()
     for _, seq in tqdm.tqdm(I):
-        # assert len(seq) == cb_len + umi_len  #TODO uncomment this!!
+        assert len(seq) == cb_len + umi_len  #TODO uncomment this!!
         cb = seq[:cb_len]
         # umi = seq[cb_len:]
         read_counter[cb] += 1
