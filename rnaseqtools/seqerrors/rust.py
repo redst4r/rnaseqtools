@@ -1,20 +1,27 @@
 from rnaseqtools.seqerrors.transcript_errors import estimate_error_rate
 import pandas as pd
 import os
+
+
 def mk_rustcall_cb(fastq_glob, whitelist_file, outfile, topn):
-    s1 = f"cd /home/mstrasse/TB4/rust_code/rust_shadow; RUSTUP_HOME=/home/mstrasse/TB4/rust_installation/.rustup CARGO_HOME=/home/mstrasse/TB4/rust_installation/.cargo cargo run --release -- -w {whitelist_file} --ntop {topn} --output {outfile} --command cb {fastq_glob}"
-    print(s1)
+    s1 = f"cd /home/mstrasse/TB4/rust_code/rust_shadow; RUSTUP_HOME=/home/mstrasse/TB4/rust_installation/.rustup CARGO_HOME=/home/mstrasse/TB4/rust_installation/.cargo cargo run --release -- --output {outfile} cb -w {whitelist_file} --ntop {topn}  {fastq_glob}"
+    # print(s1)
     os.system(s1)
 
 def mk_rustcall_cbumi(fastq_glob, whitelist_file, outfile, topn):
-    s1 = f"cd /home/mstrasse/TB4/rust_code/rust_shadow; RUSTUP_HOME=/home/mstrasse/TB4/rust_installation/.rustup CARGO_HOME=/home/mstrasse/TB4/rust_installation/.cargo cargo run --release -- -w {whitelist_file} --ntop {topn} --output {outfile} --command cb_umi_sketch {fastq_glob}"
-    print(s1)
+    s1 = f"cd /home/mstrasse/TB4/rust_code/rust_shadow; RUSTUP_HOME=/home/mstrasse/TB4/rust_installation/.rustup CARGO_HOME=/home/mstrasse/TB4/rust_installation/.cargo cargo run --release --  --output {outfile} cb-umi-sketch -w {whitelist_file} --ntop {topn}  {fastq_glob}"
+    # print(s1)
     os.system(s1)
 
 
 def mk_rustcall_cbumi_full(fastq_glob, whitelist_file, outfile, topn):
-    s1 = f"cd /home/mstrasse/TB4/rust_code/rust_shadow; RUSTUP_HOME=/home/mstrasse/TB4/rust_installation/.rustup CARGO_HOME=/home/mstrasse/TB4/rust_installation/.cargo cargo run --release -- -w {whitelist_file} --ntop {topn} --output {outfile} --command cb_umi_exact {fastq_glob}"
-    print(s1)
+    s1 = f"cd /home/mstrasse/TB4/rust_code/rust_shadow; RUSTUP_HOME=/home/mstrasse/TB4/rust_installation/.rustup CARGO_HOME=/home/mstrasse/TB4/rust_installation/.cargo cargo run --release -- --output {outfile} cb-umi-exact -w {whitelist_file} --ntop {topn}   {fastq_glob}"
+    # print(s1)
+    os.system(s1)
+
+def mk_rustcall_cbumi_cell(busfile, outfile, nmax):
+    s1 = f"cd /home/mstrasse/TB4/rust_code/rust_shadow; RUSTUP_HOME=/home/mstrasse/TB4/rust_installation/.rustup CARGO_HOME=/home/mstrasse/TB4/rust_installation/.cargo cargo run --release -- --output {outfile}  cb-umi-cell  --nmax {nmax} {busfile}"
+    # print(s1)
     os.system(s1)
 
 def rust_output_to_error_estimate(df_rust):
