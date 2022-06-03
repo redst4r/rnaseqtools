@@ -2,25 +2,27 @@ from rnaseqtools.seqerrors.transcript_errors import estimate_error_rate
 import pandas as pd
 import os
 
+PREFIX = 'cd /home/mstrasse/TB4/rust_code/rust_shadow; RUSTUP_HOME=/home/mstrasse/TB4/rust_installation/.rustup CARGO_HOME=/home/mstrasse/TB4/rust_installation/.cargo'
 
 def mk_rustcall_cb(fastq_glob, whitelist_file, outfile, topn):
-    s1 = f"cd /home/mstrasse/TB4/rust_code/rust_shadow; RUSTUP_HOME=/home/mstrasse/TB4/rust_installation/.rustup CARGO_HOME=/home/mstrasse/TB4/rust_installation/.cargo cargo run --release -- --output {outfile} cb -w {whitelist_file} --ntop {topn}  {fastq_glob}"
+    s1 = f"{PREFIX} cargo run --release -- --output {outfile} cb -w {whitelist_file} --ntop {topn}  {fastq_glob}"
     # print(s1)
     os.system(s1)
 
 def mk_rustcall_cbumi(fastq_glob, whitelist_file, outfile, topn):
-    s1 = f"cd /home/mstrasse/TB4/rust_code/rust_shadow; RUSTUP_HOME=/home/mstrasse/TB4/rust_installation/.rustup CARGO_HOME=/home/mstrasse/TB4/rust_installation/.cargo cargo run --release --  --output {outfile} cb-umi-sketch -w {whitelist_file} --ntop {topn}  {fastq_glob}"
+    s1 = f"{PREFIX} cargo run --release --  --output {outfile} cb-umi-sketch -w {whitelist_file} --ntop {topn}  {fastq_glob}"
     # print(s1)
     os.system(s1)
 
 
 def mk_rustcall_cbumi_full(fastq_glob, whitelist_file, outfile, topn):
-    s1 = f"cd /home/mstrasse/TB4/rust_code/rust_shadow; RUSTUP_HOME=/home/mstrasse/TB4/rust_installation/.rustup CARGO_HOME=/home/mstrasse/TB4/rust_installation/.cargo cargo run --release -- --output {outfile} cb-umi-exact -w {whitelist_file} --ntop {topn}   {fastq_glob}"
+    s1 = f"{PREFIX} cargo run --release -- --output {outfile} cb-umi-exact -w {whitelist_file} --ntop {topn}   {fastq_glob}"
     # print(s1)
     os.system(s1)
 
-def mk_rustcall_cbumi_cell(busfile, outfile, nmax):
-    s1 = f"cd /home/mstrasse/TB4/rust_code/rust_shadow; RUSTUP_HOME=/home/mstrasse/TB4/rust_installation/.rustup CARGO_HOME=/home/mstrasse/TB4/rust_installation/.cargo cargo run --release -- --output {outfile}  cb-umi-cell  --nmax {nmax} {busfile}"
+def mk_rustcall_cbumi_cell(busfile, outfile, nmax, aggr: bool):
+    cmd = 'cb-umi-cell-aggr' if aggr else 'cb-umi-cell'
+    s1 = f"{PREFIX} cargo run --release -- --output {outfile} {cmd} --nmax {nmax} {busfile}"
     # print(s1)
     os.system(s1)
 
