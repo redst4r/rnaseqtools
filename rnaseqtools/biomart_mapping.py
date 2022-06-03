@@ -76,6 +76,8 @@ def biomart_query_all(verbose=False, extra_fields=None, force_download=False):
     if not force_download and os.path.exists(THE_FILE):
         return _biomart_df_postprocess(pd.read_csv(THE_FILE, index_col=0))
 
+    raise ValueError("THE BIOMART FILE SHOULD BE INCLUDED ALREADY!!")
+
     s = biomart.BioMart(host=HOST)
     s.new_query()
     s.add_dataset_to_xml('hsapiens_gene_ensembl')
