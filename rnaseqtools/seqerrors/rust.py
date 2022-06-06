@@ -37,3 +37,54 @@ def rust_output_to_error_estimate(df_rust):
         df_error2.append(s)
     df_error2 = pd.DataFrame(df_error2)
     return df_error2
+
+
+def rust_read_cb_results(samplename, DIRECTORY):
+    # reading the precompuated error estimates in the directory
+    results_df = pd.read_csv(f'{DIRECTORY}/{samplename}/cb.csv')
+    df_error  = rust_output_to_error_estimate(results_df)
+    df_error['samplename'] = samplename
+
+def rust_read_umi_results(samplename, DIRECTORY):
+    # reading the precompuated error estimates in the directory
+    results_df = pd.read_csv(f'{DIRECTORY}/{samplename}/cb.csv')
+    df_error  = rust_output_to_error_estimate(results_df)
+    df_error['samplename'] = samplename
+
+
+def load_rust_cb_cell_aggregate(samplename, remove_singletons, DIRECTORY):
+    """
+    loading the error estimates for UMIs; based on the aggregated error estimates (rustfastq cb-umi-cell-aggr)
+    """
+    df_raw = pd.read_csv(f'{DIRECTORY}/{samplename}/umi.csv')
+    df_raw = df_raw.rename({f'position_{i}_sum': f'position_{i}' for i in range(28)}, axis=1)
+    df_raw = df_raw.rename({'n_real_sum': 'n_real'}, axis=1)
+
+    if remove_singletons:
+        df_raw['n_real'] = df_raw['n_real'] - df_raw['singeltons']
+        df_raw['n_total'] = df_raw['n_total'] - df_raw['singeltons']
+
+    df_error = beta_binomial_error_estimates(df_raw)
+    df_error['samplename'] = samplename
+    
+    return df_error
+
+from scipy.stats import beta
+def beta_binomial_error_estimates(df_raw):
+    """
+    given the table of shadow and real molecules, estimate the
+    sequencing errors using a beta-binomial model
+    """
+    pos_cols = [_ for _ in df_raw.columns if _.startswith('position')]
+    df_raw['n_shadow'] = df_raw[pos_cols].sum(1)
+    df_raw['n_total'] = df_raw['n_real'] + df_raw['n_shadow']
+
+    df_error = []
+    for i in range(len(pos_cols)):
+        col = f'position_{i}'
+        pseudo_count = 1
+        rv = beta(a=pseudo_count+df_raw[col].sum(), b=pseudo_count+df_raw['n_real'].sum())
+        df_error.append({'error_binom': rv.mean(), 'error_binom_c95': rv.ppf(0.95), 'error_binom_c5': rv.ppf(0.05), 'position': i})
+    df_error = pd.DataFrame(df_error)
+
+    return df_error
