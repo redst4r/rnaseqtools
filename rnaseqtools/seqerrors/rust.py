@@ -39,6 +39,19 @@ def rust_output_to_error_estimate(df_rust):
     return df_error2
 
 
+def rust_output_to_error_estimate_binomial(df_rust):
+    n_bases = len([_ for _ in df_rust.columns if _.startswith('position_')])
+    df_error2 = []
+    for i in range(n_bases):
+        col = f'position_{i}'
+        _df = df_rust[['n_real', col]].rename({col:'n_shadow'}, axis=1)
+        s = beta_binomial_error_estimates(_df)
+        s['position'] = i
+        df_error2.append(s)
+    df_error2 = pd.DataFrame(df_error2)
+    return df_error2
+
+
 def rust_read_cb_results(samplename, DIRECTORY):
     # reading the precompuated error estimates in the directory
     results_df = pd.read_csv(f'{DIRECTORY}/{samplename}/cb.csv')
@@ -52,11 +65,8 @@ def rust_read_umi_results(samplename, DIRECTORY):
     df_error['samplename'] = samplename
 
 
-def load_rust_cb_cell_aggregate(samplename, remove_singletons, DIRECTORY):
-    """
-    loading the error estimates for UMIs; based on the aggregated error estimates (rustfastq cb-umi-cell-aggr)
-    """
-    df_raw = pd.read_csv(f'{DIRECTORY}/{samplename}/umi.csv')
+def _load_rust_cb_cell_aggregate(fname, remove_singletons):
+    df_raw = pd.read_csv(fname)
     df_raw = df_raw.rename({f'position_{i}_sum': f'position_{i}' for i in range(28)}, axis=1)
     df_raw = df_raw.rename({'n_real_sum': 'n_real'}, axis=1)
 
@@ -65,8 +75,15 @@ def load_rust_cb_cell_aggregate(samplename, remove_singletons, DIRECTORY):
         df_raw['n_total'] = df_raw['n_total'] - df_raw['singeltons']
 
     df_error = beta_binomial_error_estimates(df_raw)
+    return df_error
+
+def load_rust_cb_cell_aggregate(samplename, remove_singletons, DIRECTORY):
+    """
+    loading the error estimates for UMIs; based on the aggregated error estimates (rustfastq cb-umi-cell-aggr)
+    """
+    fname = f'{DIRECTORY}/{samplename}/umi.csv'
+    df_error = _load_rust_cb_cell_aggregate(fname, remove_singletons)
     df_error['samplename'] = samplename
-    
     return df_error
 
 from scipy.stats import beta
