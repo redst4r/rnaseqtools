@@ -21,10 +21,21 @@ def mk_rustcall_cbumi_full(fastq_glob, whitelist_file, outfile, topn):
     os.system(s1)
 
 def mk_rustcall_cbumi_cell(busfile, outfile, nmax, aggr: bool):
-    cmd = 'cb-umi-cell-aggr' if aggr else 'cb-umi-cell'
-    s1 = f"{PREFIX} cargo run --release -- --output {outfile} {cmd} --nmax {nmax} {busfile}"
+    s1 = f"{PREFIX} cargo run --release -- --output {outfile} cb-umi-cell --nmax {nmax} --busfile {busfile}"
+    if aggr:
+        s1 = f'{s1} --aggr'
     # print(s1)
     os.system(s1)
+
+def mk_rustcall_cbumi_cell_gene(busfolder, outfile, nmax, aggr: bool):
+    s1 = f"{PREFIX} cargo run --release -- --output {outfile} cb-umi-cell-gene --nmax {nmax} --busfolder {busfolder}"
+    if aggr:
+        s1 = f'{s1} --aggr'
+    # print(s1)
+    os.system(s1)
+
+
+
 
 def rust_output_to_error_estimate(df_rust):
     n_bases = len([_ for _ in df_rust.columns if _.startswith('position_')])
@@ -38,18 +49,19 @@ def rust_output_to_error_estimate(df_rust):
     df_error2 = pd.DataFrame(df_error2)
     return df_error2
 
-
 def rust_output_to_error_estimate_binomial(df_rust):
-    n_bases = len([_ for _ in df_rust.columns if _.startswith('position_')])
-    df_error2 = []
-    for i in range(n_bases):
-        col = f'position_{i}'
-        _df = df_rust[['n_real', col]].rename({col:'n_shadow'}, axis=1)
-        s = beta_binomial_error_estimates(_df)
-        s['position'] = i
-        df_error2.append(s)
-    df_error2 = pd.DataFrame(df_error2)
-    return df_error2
+    return beta_binomial_error_estimates(df_rust)
+# def rust_output_to_error_estimate_binomial(df_rust):
+#     n_bases = len([_ for _ in df_rust.columns if _.startswith('position_')])
+#     df_error2 = []
+#     for i in range(n_bases):
+#         col = f'position_{i}'
+#         _df = df_rust[['n_real', col]].rename({col:'n_shadow'}, axis=1)
+#         s = beta_binomial_error_estimates(_df)
+#         s['position'] = i
+#         df_error2.append(s)
+#     df_error2 = pd.DataFrame(df_error2)
+#     return df_error2
 
 
 def rust_read_cb_results(samplename, DIRECTORY):
@@ -57,13 +69,30 @@ def rust_read_cb_results(samplename, DIRECTORY):
     results_df = pd.read_csv(f'{DIRECTORY}/{samplename}/cb.csv')
     df_error  = rust_output_to_error_estimate(results_df)
     df_error['samplename'] = samplename
+    return df_error
+
+
+def rust_read_cb_results_aggregate(samplename, DIRECTORY):
+    # reading the precompuated error estimates in the directory
+    results_df = pd.read_csv(f'{DIRECTORY}/{samplename}/cb.csv')
+    df_error = beta_binomial_error_estimates(results_df)
+    df_error['samplename'] = samplename
+    return df_error
+
 
 def rust_read_umi_results(samplename, DIRECTORY):
     # reading the precompuated error estimates in the directory
-    results_df = pd.read_csv(f'{DIRECTORY}/{samplename}/cb.csv')
+    results_df = pd.read_csv(f'{DIRECTORY}/{samplename}/umi.csv')
     df_error  = rust_output_to_error_estimate(results_df)
     df_error['samplename'] = samplename
+    return df_error
 
+def rust_read_umi_results(samplename, DIRECTORY):
+    # reading the precompuated error estimates in the directory
+    results_df = pd.read_csv(f'{DIRECTORY}/{samplename}/umi.csv')
+    df_error  = rust_output_to_error_estimate(results_df)
+    df_error['samplename'] = samplename
+    return df_error
 
 def _load_rust_cb_cell_aggregate(fname, remove_singletons):
     df_raw = pd.read_csv(fname)
