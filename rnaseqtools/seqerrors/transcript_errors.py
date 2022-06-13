@@ -21,6 +21,10 @@ import pybktree
 from rnaseqtools.seqerrors.utils import hamming_distance
 
 
+def get_all_1BP_mutants(seq:str):
+    for i in range(len(seq)):
+        for s in  _get_1BP_mutants(seq, i):
+            yield s
 
 def _get_1BP_mutants(seq:str, position:int):
     "return the three 1BP mutations of a sequence at the given position"
