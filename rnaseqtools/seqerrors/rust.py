@@ -89,6 +89,7 @@ def _load_rust_cb_cell_aggregate(fname, remove_singletons):
         df_raw['n_total'] = df_raw['n_total'] - df_raw['singeltons']
 
     df_error = beta_binomial_error_estimates(df_raw)
+    df_error['n_cells'] = df_raw.shape[0]
     return df_error
 
 def rust_read_tso_results(samplename, DIRECTORY):
