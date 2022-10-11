@@ -10,37 +10,6 @@ from bioservices import biomart
 
 HOST = 'uswest.ensembl.org'
 
-
-"""
-the main function to use with the biomart data!!
-"""
-
-
-def load_biomart():
-    """
-    this returns a dataframe with
-      symbol
-      ensembl_gene_id
-      transcript_length
-      ensembl_transcript_id
-      type == transcript_biotype
-      entrezgene
-    """
-    warnings.warn('dont use this! does some weird filtering. just load the pure dataframe with biomart_query_all()', DeprecationWarning)
-    df_biomart = biomart_query_all()
-
-    # sometimes we get multiple entries per transcript_id, get rid of these
-    # dups = df.ensembl_transcript_id.value_counts().index[(df.ensembl_transcript_id.value_counts() > 1)]
-    df_biomart = df_biomart.drop_duplicates('ensembl_transcript_id')
-    df_biomart['hgnc_symbol'] = [s if isinstance(s, str) else t
-                                 for s, t in zip(df_biomart.hgnc_symbol,
-                                                 df_biomart.ensembl_transcript_id)]
-
-    df_biomart.rename({'hgnc_symbol': 'symbol', 'transcript_biotype': 'type'}, axis=1, inplace=True)
-
-    return df_biomart
-
-
 """
 helper functions to create the biomart dataframe
 """
