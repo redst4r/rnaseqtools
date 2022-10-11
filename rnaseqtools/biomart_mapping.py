@@ -35,6 +35,18 @@ def biomart_query_genes(gene_ids, batchsize=10000, verbose=False):
     return biomart_query(gene_ids, 'ensembl_gene_id', batchsize, verbose)
 
 
+import hashlib
+def md5(fname: str):
+    """
+    calcualte the m5sum of a file
+    """
+    hash_md5 = hashlib.md5()
+    with open(fname, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
+
+
 def biomart_query_all(verbose=False, extra_fields=None, force_download=False):
     """
     pulls down all entries from BIOMART for Human: symbol, trasncript, gene, length, type
@@ -42,6 +54,7 @@ def biomart_query_all(verbose=False, extra_fields=None, force_download=False):
 
     THE_FILE = pathlib.Path(__file__).parent / 'biomart_all.csv.gz'
 
+    assert  md5(str(THE_FILE)) == "34f414e3384c0e19294de6be6c947090", "biomart file changed on disk!"
     if not force_download and os.path.exists(THE_FILE):
         return _biomart_df_postprocess(pd.read_csv(THE_FILE, index_col=0))
 
