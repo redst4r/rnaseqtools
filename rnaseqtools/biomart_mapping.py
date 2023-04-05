@@ -182,3 +182,44 @@ def biomart_query(id_list:list, id_type:str, batchsize=10000, verbose=False):
         'entrezgene',
     ]
     return biomart_query_new(attributes, filter=id_type, filter_values=id_list, batchsize=batchsize)
+
+
+import rpy2.robjects as ro
+from rpy2.robjects.conversion import localconverter
+from rpy2.robjects.packages import importr
+from rpy2.robjects import pandas2ri
+import pandas as pd
+
+def probeids_to_symbols(probeids):
+    """
+    convert microarray probe ids into gene names
+    """
+    importr("biomaRt")
+    ro.r(
+        """
+        require("biomaRt")
+        mart <- useMart("ENSEMBL_MART_ENSEMBL")
+        mart <- useDataset("hsapiens_gene_ensembl", mart)
+        """
+    )
+    r_probe_ids = ro.StrVector(probeids)
+
+    # move into R
+    with localconverter(ro.default_converter):
+        ro.globalenv['probe_ids'] = r_probe_ids
+        ro.r(
+        """
+        annotLookup <- getBM(
+          mart=mart,
+          attributes=c(
+            "affy_hg_u133_plus_2",
+            "ensembl_gene_id",
+            "gene_biotype",
+            "external_gene_name"),
+          filter = "affy_hg_u133_plus_2",
+          values = probe_ids, uniqueRows=TRUE)
+            """
+        )
+    with localconverter(ro.default_converter + pandas2ri.converter):
+        df = ro.r('annotLookup')
+    return df
