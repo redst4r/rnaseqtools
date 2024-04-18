@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from bioservices import biomart
 
-HOST = 'uswest.ensembl.org'
+HOST = 'useast.ensembl.org'
 
 """
 helper functions to create the biomart dataframe
@@ -56,7 +56,7 @@ def biomart_query_all(verbose=False, extra_fields=None, force_download=False):
 
     assert  md5(str(THE_FILE)) == "34f414e3384c0e19294de6be6c947090", "biomart file changed on disk!"
     if not force_download and os.path.exists(THE_FILE):
-        return _biomart_df_postprocess(pd.read_csv(THE_FILE, index_col=0))
+        return _biomart_df_postprocess(pd.read_csv(THE_FILE, index_col=0, dtype={'chromosome_name': str}))
 
     raise ValueError("THE BIOMART FILE SHOULD BE INCLUDED ALREADY!!")
 
