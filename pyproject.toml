@@ -1,0 +1,31 @@
+
+[project]
+name = "rnaseqtools"
+version = "0.2.0"
+description = "Handling RNAseq data, wrappers for aligners, functions on bamfiles"
+# readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "GNU GPL 3"} 
+authors = [
+  {name = "redst4r", email = "redst4r@web.de"},
+]
+maintainers = [
+  {name = "redst4r", email = "redst4r@web.de"},
+]
+
+dependencies = [
+	'toolz',
+	'numpy',
+	'pysam',
+	'tqdm',
+	'scipy',
+	'pandas',
+	'bioservices',
+	'pyliftover',
+	'pybktree',
+	'more_itertools'
+]
+
+[project.urls]
+Repository = 'http://github.com/redst4r/rnaseqtools/'
+
