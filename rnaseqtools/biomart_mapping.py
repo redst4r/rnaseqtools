@@ -2,11 +2,13 @@ import warnings
 import pathlib
 import io
 import os
-import collections
 import tqdm
 import numpy as np
 import pandas as pd
 from bioservices import biomart
+import hashlib
+from more_itertools import chunked
+
 
 HOST = 'useast.ensembl.org'
 
@@ -35,7 +37,6 @@ def biomart_query_genes(gene_ids, batchsize=10000, verbose=False):
     return biomart_query(gene_ids, 'ensembl_gene_id', batchsize, verbose)
 
 
-import hashlib
 def md5(fname: str):
     """
     calcualte the m5sum of a file
@@ -105,20 +106,6 @@ def biomart_query_all(verbose=False, extra_fields=None, force_download=False):
     return df
 
 
-def batch(some_iterable, batchsize):
-    """
-    splits the iterable into a couple of chunks of size n
-    handy for iterating over batches
-    :param some_iterable:  iterable to be chunked/batched
-    :param batchsize: batchSize
-    :return: gnerator over iterables
-    """
-    assert isinstance(some_iterable, collections.Iterable)  # TODO this does not guard against np.arrays as they are also iterable (over single elements)
-    l = len(some_iterable)
-    for ndx in range(0, l, batchsize):
-        yield some_iterable[ndx:min(ndx + batchsize, l)]
-
-
 def biomart_query_new(attributes:list, filter:str, filter_values:list, batchsize=10000, verbose=False):
     """
     query biomart similar to the R-function getBM()
@@ -131,7 +118,7 @@ def biomart_query_new(attributes:list, filter:str, filter_values:list, batchsize
 
     batch_results = []
     n_batches = int(np.ceil(len(filter_values)/ batchsize))
-    for id_batch in tqdm.tqdm(batch(filter_values, batchsize=batchsize), total=n_batches):
+    for id_batch in tqdm.tqdm(chunked(filter_values, n=batchsize), total=n_batches):
 
         s.new_query()
         s.add_dataset_to_xml('hsapiens_gene_ensembl')
